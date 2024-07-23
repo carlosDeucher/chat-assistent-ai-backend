@@ -1,0 +1,19 @@
+{
+  "name": "demo-chat-web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carlosDeucher/demo-chat-bot-ia-web.git"
+  },
+  "author": "Carlos Henrique Deucher",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/carlosDeucher/demo-chat-bot-ia-web/issues"
+  },
+  "homepage": "https://github.com/carlosDeucher/demo-chat-bot-ia-web#readme"
+}
