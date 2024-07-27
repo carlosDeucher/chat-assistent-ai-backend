@@ -2,9 +2,13 @@
   "name": "demo-chat-web",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.ts",
+  "type": "module",
   "scripts": {
-    "test": "test"
+    "dev": "tsx watch src/server.ts",
+    "test:dev": "node --test --watch src/controllers/DialogueController.test.js",
+    "build": "tsc -p tsconfig.json",
+    "start": "fastify start src/server.js"
   },
   "repository": {
     "type": "git",
@@ -15,5 +19,17 @@
   "bugs": {
     "url": "https://github.com/carlosDeucher/demo-chat-bot-ia-web/issues"
   },
-  "homepage": "https://github.com/carlosDeucher/demo-chat-bot-ia-web#readme"
+  "homepage": "https://github.com/carlosDeucher/demo-chat-bot-ia-web#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.16.0",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "fastify-cli": "^6.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.12",
+    "tsx": "^3.12.7",
+    "typescript": "^5.5.4"
+  }
 }
