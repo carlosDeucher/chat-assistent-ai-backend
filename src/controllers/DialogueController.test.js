@@ -1,5 +1,6 @@
 import { describe, before, after, it } from "node:test";
 import { deepStrictEqual, ok } from "node:assert";
+import axios from "axios";
 
 describe("API Workflow", () => {
   // Fastify instance
@@ -26,17 +27,16 @@ describe("API Workflow", () => {
   });
 
   it("should receive 200 given the prompt in the body", async () => {
-    const requestData = { prompt: "How you are?" };
+    const data = { prompt: "Olá! Gostaria de realizar um pedido :)" };
 
-    const request = await fetch("http://localhost:3000/answer", {
-      method: "POST",
-      body: JSON.stringify(requestData),
-    });
+    const request = await axios
+      .post("http://localhost:3000/answer", data)
+      .catch((err) => console.log("err", err));
+    const response =  request.data;
+
+    if (response.message !== "Success" && !response.data.answer)
+      throw new Error("Invalid response body");
 
     deepStrictEqual(request.status, 200);
-
-    const responseData = JSON.parse(request.body);
-    if (responseData.message !== "Success" && !responseData.data.answer)
-      throw new Error("Invalid response body");
   });
 });
