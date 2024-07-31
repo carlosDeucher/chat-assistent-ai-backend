@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "test:dev": "node --test --watch src/controllers/DialogueController.test.js",
-    "test": "node --test src/controllers/DialogueController.test.js",
+    "test:dev": "node --test --watch src/server.test.js",
+    "test": "node --test src/server.test.js",
     "build": "tsc -p tsconfig.json",
     "start": "fastify start src/server.js"
   },
