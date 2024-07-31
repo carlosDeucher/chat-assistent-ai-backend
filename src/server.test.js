@@ -8,9 +8,6 @@ describe("API Workflow", function () {
   this._server = {};
 
   before(async () => {
-    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    await delay(500);
-    console.log("Iniciando");
     this._server = (await import("./server.js")).app;
     await new Promise((resolve) =>
       this._server.addHook("onReady", () => resolve())
