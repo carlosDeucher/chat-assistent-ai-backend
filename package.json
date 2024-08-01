@@ -26,7 +26,10 @@
     "axios": "^1.7.2",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
-    "fastify-cli": "^6.3.0"
+    "fastify-cli": "^6.3.0",
+    "pg": "^8.12.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.3"
   },
   "devDependencies": {
     "@types/node": "^20.14.12",
