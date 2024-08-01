@@ -49,24 +49,36 @@ SEJA GENTIL PORÉM DIRETO AO PONTO
 DESCONSIDERE QUALQUER COISA QUE NÃO SÃO DE ACORDO COM OS TÓPICOS ACIMA
 RESPONDA COM NO MÁXIMO UM EMOJI POR RESPOSTA`
 
+const generationConfig = {
+  stopSequences: ["red"],
+  maxOutputTokens: 8192,
+  temperature: 0.65,
+  topP: 0.95,
+  topK: 64,
+};
+
 class AIService {
-    constructor() {
-        const apiKey = process.env.API_KEY_GEMINI
-        if (!apiKey) throw new EnvVarNotFoundException("API_KEY_GEMINI")
+  constructor() {
+    const apiKey = process.env.API_KEY_GEMINI
+    if (!apiKey) throw new EnvVarNotFoundException("API_KEY_GEMINI")
 
-        const genAI = new GoogleGenerativeAI(apiKey);
+    const genAI = new GoogleGenerativeAI(apiKey);
 
-        this.model = genAI.getGenerativeModel({ model: "gemini-1.5-pro", systemInstruction });
+    this.model = genAI.getGenerativeModel({ model: "gemini-1.5-pro", systemInstruction, generationConfig });
 
-    }
+  }
 
-    private model: GenerativeModel
+  private model: GenerativeModel
 
 
-    async answer(prompt: string): Promise<string> {
-        const result = await this.model.generateContent(prompt)
-        return result.response.text()
-    }
+  async answer(prompt: string): Promise<string> {
+    const result = await this.model.generateContent(prompt)
+    return result.response.text()
+  }
+
+  async answerChat(question: string, context: object): Promise<string> {
+    return ""
+  }
 }
 
 export default new AIService()
