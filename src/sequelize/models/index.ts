@@ -1,2 +1,2 @@
-import "./Empresa.js";
+import "./Company.js";
 import "./Message.js"

@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config.js";
 
-const Empresa = sequelize.define('Empresa', {
+const Company = sequelize.define('Company', {
     bloqueado: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -17,4 +17,4 @@ const Empresa = sequelize.define('Empresa', {
     },
 })
 
-export default Empresa
+export default Company

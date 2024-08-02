@@ -39,7 +39,7 @@ class DialogueController {
     async chat(request: FastifyRequest, reply: FastifyReply) {
         const { prompt, chatId } = request.body as ChatBody
 
-        const userId = request.headers.userId as string
+        const empresaId = request.headers.userId as string
 
         const user = await new Promise((resolve) => setTimeout(resolve, 500)) as IUser
 
