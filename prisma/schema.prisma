@@ -1,0 +1,29 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider     = "postgres"
+    url          = "postgresql://postgres:postgres@localhost:5432/chat-ia"
+    relationMode = "prisma"
+}
+
+model Company {
+    id             String    @id @default(uuid())
+    companyName    String    @unique
+    blocked        Boolean
+    password       String
+    iaInstructions String?
+    messages       Message[]
+}
+
+model Message {
+    id         String  @id @default(uuid())
+    content    String
+    whatsapp   String
+    company    Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+    company_id String
+    chat_id    String?
+
+    @@index([company_id])
+}
