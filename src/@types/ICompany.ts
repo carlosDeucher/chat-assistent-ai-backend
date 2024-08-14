@@ -1,5 +1,5 @@
 export interface ICompany {
     id: string
-    bloqueado?: boolean
+    blocked?: boolean
     aiInstructions?: string
 }
