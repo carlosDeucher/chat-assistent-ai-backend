@@ -1,5 +1,6 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { FastifyInstance } from "fastify";
 import DialogueController from "../controllers/DialogueController.js";
+import AuthenticationMiddleware from "../middlewares/AuthenticationMiddleware.js";
 
 
 
@@ -9,9 +10,9 @@ import DialogueController from "../controllers/DialogueController.js";
  */
 async function routes(fastify: FastifyInstance) {
     fastify.post('/answer', DialogueController.answerOpts, DialogueController.answer)
+    fastify.post('/chat', { onRequest: AuthenticationMiddleware }, DialogueController.chat)
 
     return fastify
 }
 
-//ESM
 export default routes;

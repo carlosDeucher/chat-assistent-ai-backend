@@ -3,7 +3,9 @@ import prisma from "../lib/prisma.js";
 import { ONE_YEAR_IN_SECONDS } from '../utils/constants.js'
 import bcryptjs from 'bcryptjs'
 import { EmailInUseException } from "../exceptions/company/EmailInUseException.js";
-import { InvalidCredentialsException } from "../exceptions/company/InvalidCredentialsException.js";
+import { InvalidCredentialsException } from "../exceptions/auth/InvalidCredentialsException.js";
+import TokenService from "../services/TokenService.js";
+import { decodeBasicAuth } from "../utils/decodeBasicAuth.js";
 
 type CreateBody = {
     companyName: string
@@ -12,31 +14,15 @@ type CreateBody = {
     email: string
 }
 
-type LoginBody = {
-    email: string
-    password: string
-}
-
 class CompanyController {
-
-    get loginOpts() {
-        return {
-            schema: {
-                body: {
-                    type: 'object',
-                    properties: {
-                        password: { type: "string" },
-                        email: { type: "string" }
-                    },
-                    required: ['password', 'email']
-                },
-
-            }
-        }
-    }
-
     async login(request: FastifyRequest, reply: FastifyReply) {
-        const { password, email } = request.body as LoginBody
+        const authHeader = request.headers.authorization
+
+        const isInvalidCredential = !authHeader || !authHeader.startsWith('Basic ')
+
+        if (isInvalidCredential) throw new InvalidCredentialsException()
+
+        const [email, password] = decodeBasicAuth(authHeader)
 
         const company = await prisma.company.findUnique({
             select: {
@@ -60,8 +46,8 @@ class CompanyController {
 
         if (!passwordMatch) throw new InvalidCredentialsException()
 
-        // const accessToken = TokenService.generateAccessToken(company.id)
-        const accessToken = "blabla"
+        const accessToken = TokenService.generateAccessToken(company.id)
+        const refreshToken = TokenService.generateRefreshToken(company.id)
 
         return reply
             .setCookie('jwt_token', accessToken, {
@@ -70,8 +56,14 @@ class CompanyController {
                 sameSite: 'none',
                 secure: true,
                 maxAge: ONE_YEAR_IN_SECONDS,
+            }).setCookie('jwt_refresh_token', refreshToken, {
+                path: '/',
+                httpOnly: false,
+                sameSite: 'none',
+                secure: true,
+                maxAge: ONE_YEAR_IN_SECONDS,
             })
-            .send({ accessToken, id: company.id })
+            .send({ accessToken, refreshToken, id: company.id })
 
     }
 
@@ -101,8 +93,8 @@ class CompanyController {
         */
         const company = await prisma.company.findUnique({
             where: {
-                email
-            }
+                email,
+            },
         })
 
         // Caso o email esteja em uso retorna erro

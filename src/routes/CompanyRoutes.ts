@@ -9,7 +9,7 @@ import CompanyController from "../controllers/CompanyController.js";
  */
 async function routes(fastify: FastifyInstance) {
     fastify.post('/create-company', CompanyController.createOpts, CompanyController.create)
-    fastify.post('/login', CompanyController.loginOpts, CompanyController.login)
+    fastify.post('/login', CompanyController.login)
 
     return fastify
 }
