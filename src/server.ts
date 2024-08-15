@@ -1,26 +1,24 @@
-// ESM
 import Fastify from 'fastify'
-import firstRoute from './routes/DialogueRoutes.js'
 
-/**
- * @type {import('fastify').FastifyInstance} Instance of Fastify
- */
-const fastify = Fastify({
-  logger: false
-})
 
-fastify.register(firstRoute)
 
-fastify.listen({ port: 3000 }, function (err: any, address: any) {
-  console.log("Servidor ouvindo na porta 3000")
+function bootstrap() {
+  const app = Fastify({
+    logger: false
+  })
 
-  if (err) {
-    fastify.log.error(err)
-    process.exit(1)
-  }
-  // Server is now listening on ${address}
-})
+  app.register(import('./app.js'))
 
-const app = fastify
+  app.listen({ port: 3000 }, function (err: any, address: any) {
+    console.log("Servidor ouvindo na porta 3000")
 
-export { app }
+    if (err) {
+      console.error(err)
+      app.log.error(err)
+      process.exit(1)
+    }
+    // Server is now listening on ${address}
+  })
+}
+
+bootstrap()
