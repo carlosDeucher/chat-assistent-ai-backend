@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import chatRoutes from './routes/DialogueRoutes.js'
+import chatRoutes from './routes/ChatRoutes.js'
 import formbody from '@fastify/formbody'
 import companyRoutes from './routes/CompanyRoutes.js'
 import cookie from '@fastify/cookie'

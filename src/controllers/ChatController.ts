@@ -31,24 +31,32 @@ class DialogueController {
     }
 
     async answer(request: FastifyRequest, reply: FastifyReply) {
-        const { prompt } = request.body as AnswerBody
+        // const { prompt } = request.body as AnswerBody
 
-        const answer = await AIService.answer(prompt)
-        return reply.status(200).send({ data: { answer }, message: "Success" })
+        // const aiService = new Ai
+
+        // const answer = await AIService.answer(prompt)
+        // return reply.status(200).send({ data: { answer }, message: "Success" })
     }
 
     async chat(request: FastifyRequest, reply: FastifyReply) {
-        const { prompt, chatId, whatsapp } = request.body as ChatBody
+        const { prompt, whatsapp } = request.body as ChatBody
 
         const companyId = request.headers.companyId as string
 
-        const company = await prisma.company.findUnique({ select: { id: true, companyName: true, iaInstructions: true }, where: { id: companyId } })
+        console.log('companyId', companyId)
+
+        const company = await prisma.company.findUnique({ select: { id: true, companyName: true, iaInstructions: true, blocked: true }, where: { id: companyId } })
+
         if (!company) {
             // Empresa não encontrada
             return
+        } else if (company.blocked) {
+            // Empresa bloqueada
+            return
         }
 
-        const chat = new ChatService(chatId, company)
+        const chat = new ChatService(undefined, company)
         const response = await chat.answer(prompt)
 
         const answer = response?.answer
@@ -57,6 +65,7 @@ class DialogueController {
             MessageService.sendMessage(answer, whatsapp)
         }
 
+        return answer
 
     }
 }

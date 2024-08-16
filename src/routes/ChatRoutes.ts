@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import DialogueController from "../controllers/DialogueController.js";
+import DialogueController from "../controllers/ChatController.js";
 import AuthenticationMiddleware from "../middlewares/AuthenticationMiddleware.js";
 
 

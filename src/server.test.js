@@ -1,7 +1,7 @@
 import { describe, before, after } from "node:test";
-import dialogueControllerTests from "./controllers/DialogueController.test.js";
+import chatControllerTests from "./controllers/ChatController.js";
 
-const testFunctions = [dialogueControllerTests];
+const testFunctions = [chatControllerTests];
 
 describe("API Workflow", function () {
   // Fastify instance
