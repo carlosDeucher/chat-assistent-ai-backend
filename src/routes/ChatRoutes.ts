@@ -9,8 +9,9 @@ import AuthenticationMiddleware from "../middlewares/AuthenticationMiddleware.js
  * @param {FastifyInstance} fastify  Encapsulated Fastify Instance
  */
 async function routes(fastify: FastifyInstance) {
-    fastify.post('/answer', DialogueController.answerOpts, DialogueController.answer)
-    fastify.post('/chat', { onRequest: AuthenticationMiddleware }, DialogueController.chat)
+    fastify.post('/answer', DialogueController.answer)
+    fastify.post('/save-message', DialogueController.saveMessage)
+    fastify.post('/chat/:chatId', { onRequest: AuthenticationMiddleware }, DialogueController.chat)
 
     return fastify
 }

@@ -1,73 +1,84 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import AIService from "../services/AIService.js"
 import ChatService from "../services/ChatService.js";
 import MessageService from "../services/MessageService.js";
 import prisma from "../lib/prisma.js";
+import { CompanyNotFoundException } from "../exceptions/auth/CompanyNotFoundException.js";
+import { CompanyBlockedException } from "../exceptions/auth/CompanyBlockedException.js";
+import { z } from 'zod'
+import AIService from "../services/AIService.js";
 
-interface AnswerBody {
-    prompt: string
-}
+class ChatController {
+    async answer(request: FastifyRequest, reply: FastifyReply) {
+        const { message } = request.body as {message: string}
 
-interface ChatBody {
-    prompt: string
-    chatId: string
-    whatsapp: string
-}
-
-class DialogueController {
-    get answerOpts() {
-        return {
-            schema: {
-                body: {
-                    type: 'object',
-                    properties: {
-                        prompt: { type: 'string' },
-                    },
-                    required: ['prompt']
-                },
-
-            }
-        }
+        const answer = await new AIService("Responda educadamente").answer(message)
+        return reply.status(200).send({ data: { answer }, message: "Success" })
     }
 
-    async answer(request: FastifyRequest, reply: FastifyReply) {
-        // const { prompt } = request.body as AnswerBody
+    async saveMessage(request: FastifyRequest, reply: FastifyReply) {
+        const bodySchema = z.object({
+            whatsapp: z.string(),
+            message: z.string(),
+            companyId: z.string().uuid(),
+        })
 
-        // const aiService = new Ai
+        const { message, whatsapp, companyId } = bodySchema.parse(request.body)
 
-        // const answer = await AIService.answer(prompt)
-        // return reply.status(200).send({ data: { answer }, message: "Success" })
+        let chat = await prisma.chat.findFirst({
+            where: {
+                companyId,
+                whatsapp,
+                isOpen: true
+            },
+            select: { id: true }
+        })
+
+        if (!chat) {
+            chat = await prisma.chat.create({
+                data: {
+                    companyId,
+                    whatsapp
+                }
+            })
+        }
+
+        await MessageService.saveMessage(message, "user", companyId, chat.id)
+
+        return chat.id
     }
 
     async chat(request: FastifyRequest, reply: FastifyReply) {
-        const { prompt, whatsapp } = request.body as ChatBody
+        const bodySchema = z.object({
+            whatsapp: z.string(),
+        })
+        const paramsSchema = z.object({
+            chatId: z.string().uuid(),
+        })
+
+        const { chatId } = paramsSchema.parse(request.params)
+        const { whatsapp } = bodySchema.parse(request.body)
 
         const companyId = request.headers.companyId as string
-
-        console.log('companyId', companyId)
 
         const company = await prisma.company.findUnique({ select: { id: true, companyName: true, iaInstructions: true, blocked: true }, where: { id: companyId } })
 
         if (!company) {
-            // Empresa não encontrada
-            return
+            throw new CompanyNotFoundException()
         } else if (company.blocked) {
-            // Empresa bloqueada
-            return
+            throw new CompanyBlockedException()
         }
 
-        const chat = new ChatService(undefined, company)
-        const response = await chat.answer(prompt)
+        const chat = new ChatService(chatId, company, whatsapp)
+        const response = await chat.answer()
 
-        const answer = response?.answer
+        const { answer } = response
 
-        if (answer) {
-            MessageService.sendMessage(answer, whatsapp)
-        }
+        await MessageService.sendMessage(answer, whatsapp)
+        await MessageService.saveMessage(answer, "model", companyId, chatId)
 
         return answer
 
     }
 }
 
-export default new DialogueController()
+export default new ChatController()
