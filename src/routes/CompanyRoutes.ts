@@ -11,6 +11,8 @@ async function routes(fastify: FastifyInstance) {
     fastify.post('/create-company', CompanyController.createOpts, CompanyController.create)
     fastify.post('/login', CompanyController.login)
 
+    fastify.get('/public-company/:id', CompanyController.getPublicCompany)
+
     return fastify
 }
 
