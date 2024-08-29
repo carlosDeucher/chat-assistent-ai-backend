@@ -1,6 +1,6 @@
 import type { FastifyRequest } from 'fastify'
 
-export interface IGetCompanyIdFromTokenParams {
+export interface IGetIdFromTokenParams {
   request: FastifyRequest
   isRefreshToken?: boolean
 }
