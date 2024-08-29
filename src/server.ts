@@ -9,8 +9,8 @@ function bootstrap() {
 
   app.register(import('./app.js'))
 
-  app.listen({ port: 3000 }, function (err: any, address: any) {
-    console.log("Servidor ouvindo na porta 3000")
+  app.listen({ port: 6060 }, function (err: any, address: any) {
+    console.log("Servidor ouvindo na porta 6060")
 
     if (err) {
       console.error(err)
