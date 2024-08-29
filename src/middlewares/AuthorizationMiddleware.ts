@@ -7,7 +7,7 @@ import { EnvVarNotFoundException } from '../exceptions/config/EnvVarNotFoundExce
 /**
  * Middleware que verifica se o usuário está autenticado através do token JWT enviado no Bearer Authorization
  */
-async function AdminAuthenticationMiddleware(request: FastifyRequest) {
+async function AuthorizationMiddleware(request: FastifyRequest) {
     const authHeader = request.headers.authorization
 
     if (!authHeader || !authHeader.startsWith('Bearer '))
@@ -44,4 +44,4 @@ async function AdminAuthenticationMiddleware(request: FastifyRequest) {
     }
 }
 
-export default AdminAuthenticationMiddleware
+export default AuthorizationMiddleware
