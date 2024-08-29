@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import DialogueController from "../controllers/ChatController.js";
+import ChatController from "../controllers/ChatController.js";
 import AuthenticationMiddleware from "../middlewares/AuthenticationMiddleware.js";
 
 
@@ -9,11 +9,12 @@ import AuthenticationMiddleware from "../middlewares/AuthenticationMiddleware.js
  * @param {FastifyInstance} fastify  Encapsulated Fastify Instance
  */
 async function routes(fastify: FastifyInstance) {
-    fastify.post('/answer', DialogueController.answer)
-    fastify.post('/save-message', DialogueController.saveMessage)
-    fastify.post('/chat/:chatId', { onRequest: AuthenticationMiddleware }, DialogueController.chat)
+  fastify.post('/answer', ChatController.answer)
+  fastify.post('/message', { onRequest: AuthenticationMiddleware }, ChatController.saveMessage)
+  fastify.post('/chat/:chatId', { onRequest: AuthenticationMiddleware }, ChatController.chat)
+  fastify.get('/messages/:companyId', { onRequest: AuthenticationMiddleware }, () => null)
 
-    return fastify
+  return fastify
 }
 
 export default routes;
