@@ -1,0 +1,2 @@
+npx prisma generate - Gera os tipos Typescript do model definido com o prisma
+npx prisma db push - Atualiza o banco baseado no model definido com o prisma
