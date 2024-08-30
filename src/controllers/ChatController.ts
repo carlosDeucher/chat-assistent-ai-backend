@@ -161,8 +161,8 @@ class ChatController {
     const { startDate: startDateEncoded } =
       searchParamsSchema.parse(request.query);
 
+    // Unix Epoch January 1st, 1970 at UTC
     let startDate = dayjs(0).toDate();
-
 
     if (startDateEncoded) {
       const decodedISOString = decodeURIComponent(
