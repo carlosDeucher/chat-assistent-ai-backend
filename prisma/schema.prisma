@@ -4,26 +4,41 @@ generator client {
 
 datasource db {
     provider     = "postgres"
-    url          = "postgresql://postgres:postgres@localhost:5432/chat-ia"
+    url          = env("DATABASE_URL")
     relationMode = "prisma"
 }
 
 model Company {
     id             String    @id @default(uuid())
     companyName    String    @unique
-    blocked        Boolean
+    blocked        Boolean   @default(false)
+    email          String    @unique
     password       String
-    iaInstructions String?
+    iaInstructions String
     messages       Message[]
+    chats          Chat[]
 }
 
 model Message {
-    id         String  @id @default(uuid())
+    id         String   @id @default(uuid())
+    createdAt  DateTime @default(now())
     content    String
-    whatsapp   String
-    company    Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
-    company_id String
-    chat_id    String?
+    role       String
+    whatsapp   String?
+    tempUserId String?
+    company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    companyId  String
+    chatId     String
+    Chat       Chat?    @relation(fields: [chatId], references: [id])
+}
 
-    @@index([company_id])
+model Chat {
+    id         String    @id @default(uuid())
+    createdAt  DateTime  @default(now())
+    isOpen     Boolean   @default(true)
+    whatsapp   String?
+    tempUserId String?
+    company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    companyId  String
+    messages   Message[]
 }
