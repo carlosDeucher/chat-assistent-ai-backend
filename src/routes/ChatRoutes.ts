@@ -14,7 +14,7 @@ async function routes(fastify: FastifyInstance) {
     ChatController.saveMessage
   );
   fastify.post(
-    "/chat/:chatId",
+    "/chat/:companyId/:chatId",
     { onRequest: AuthenticationMiddleware },
     ChatController.chat
   );

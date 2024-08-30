@@ -86,34 +86,20 @@ class ChatController {
     request: FastifyRequest,
     reply: FastifyReply
   ) {
-    const companyId = request.headers
-      .companyId as string;
-
-    const bodySchema = z.object({
-      tempUserId: z.string().uuid().optional(),
-      whatsapp: z.string().optional(),
-    });
 
     const paramsSchema = z.object({
       chatId: z.string().uuid(),
+      companyId: z.string().uuid(),
     });
 
-    const { chatId } = paramsSchema.parse(
+    const { chatId, companyId } = paramsSchema.parse(
       request.params
     );
-    const { tempUserId, whatsapp } =
-      bodySchema.parse(request.body);
 
-    if (!whatsapp && !tempUserId)
-      throw new Error();
-
-    const {
-      userFieldIdentifier,
-      userIdentifier,
-    } = extractUserIdentifierProps(
-      whatsapp,
-      tempUserId
-    );
+    const userFieldIdentifier = request.headers
+      .userFieldIdentifier as IFieldUserIdentifier;
+    const userIdentifier = request.headers
+      .userIdentifier as string;
 
     const company =
       await prisma.company.findUnique({
@@ -142,10 +128,6 @@ class ChatController {
 
     const { answer } = response;
 
-    // await MessageService.sendMessage(
-    //   answer,
-    //   whatsapp
-    // );
     await MessageService.saveMessage({
       message: answer,
       role: "model",
@@ -155,7 +137,10 @@ class ChatController {
       userIdentifier,
     });
 
-    return answer;
+    return ResponseService.send({
+      reply,
+      data: { answer },
+    });
   }
 
   // Request only user by the web client
@@ -180,7 +165,7 @@ class ChatController {
           companyId,
           tempUserId,
         },
-        select: { id: true, content: true },
+        select: { id: true, content: true, role: true, createdAt: true },
       });
 
     ResponseService.send({
