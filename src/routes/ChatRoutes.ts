@@ -9,7 +9,7 @@ import AuthenticationMiddleware from "../middlewares/AuthenticationMiddleware.js
 async function routes(fastify: FastifyInstance) {
   fastify.post("/answer", ChatController.answer);
   fastify.post(
-    "/message",
+    "/message/:companyId",
     { onRequest: AuthenticationMiddleware },
     ChatController.saveMessage
   );

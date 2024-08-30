@@ -37,13 +37,20 @@ class ChatController {
     request: FastifyRequest,
     reply: FastifyReply
   ) {
-    const bodySchema = z.object({
-      message: z.string(),
+    const paramsSchema = z.object({
       companyId: z.string().uuid(),
     });
+    const bodySchema = z.object({
+      message: z.string(),
+    });
 
-    const { message, companyId } =
-      bodySchema.parse(request.body);
+    const { message } = bodySchema.parse(
+      request.body
+    );
+
+    const { companyId } = paramsSchema.parse(
+      request.params
+    );
 
     const userFieldIdentifier = request.headers
       .userFieldIdentifier as IFieldUserIdentifier;
@@ -191,6 +198,7 @@ class ChatController {
           content: true,
           role: true,
           createdAt: true,
+          chatId: true,
         },
       });
 
