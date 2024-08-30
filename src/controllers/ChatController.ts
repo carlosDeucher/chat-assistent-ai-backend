@@ -1,84 +1,193 @@
-import { FastifyReply, FastifyRequest } from "fastify";
+import {
+  FastifyReply,
+  FastifyRequest,
+} from "fastify";
 import ChatService from "../services/ChatService.js";
 import MessageService from "../services/MessageService.js";
 import prisma from "../lib/prisma.js";
 import { CompanyNotFoundException } from "../exceptions/auth/CompanyNotFoundException.js";
 import { CompanyBlockedException } from "../exceptions/auth/CompanyBlockedException.js";
-import { z } from 'zod'
+import { z } from "zod";
 import AIService from "../services/AIService.js";
+import TokenService from "../services/TokenService.js";
+import ResponseService from "../services/ResponseService.js";
+import IFieldUserIdentifier from "../@types/IFieldUserIdentifier.js";
+import extractUserIdentifierProps from "../utils/extractUserIdentifierProps.js";
 
 class ChatController {
-    async answer(request: FastifyRequest, reply: FastifyReply) {
-        const { message } = request.body as {message: string}
+  async answer(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const { message } = request.body as {
+      message: string;
+    };
 
-        const answer = await new AIService("Responda educadamente").answer(message)
-        return reply.status(200).send({ data: { answer }, message: "Success" })
+    const answer = await new AIService(
+      "Responda educadamente"
+    ).answer(message);
+    return reply.status(200).send({
+      data: { answer },
+      message: "Success",
+    });
+  }
+
+  async saveMessage(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const bodySchema = z.object({
+      message: z.string(),
+      companyId: z.string().uuid(),
+    });
+
+    const { message, companyId } =
+      bodySchema.parse(request.body);
+
+    const userFieldIdentifier = request.headers
+      .userFieldIdentifier as IFieldUserIdentifier;
+    const userIdentifier = request.headers
+      .userIdentifier as string;
+
+    let chat = await prisma.chat.findFirst({
+      where: {
+        companyId,
+        isOpen: true,
+        [userFieldIdentifier]: userIdentifier,
+      },
+      select: { id: true },
+    });
+
+    if (!chat) {
+      chat = await prisma.chat.create({
+        data: {
+          companyId,
+          [userFieldIdentifier]: userIdentifier,
+        },
+      });
     }
 
-    async saveMessage(request: FastifyRequest, reply: FastifyReply) {
-        const bodySchema = z.object({
-            whatsapp: z.string(),
-            message: z.string(),
-            companyId: z.string().uuid(),
-        })
+    await MessageService.saveMessage({
+      message,
+      role: "user",
+      companyId,
+      chatId: chat.id,
+      userFieldIdentifier,
+      userIdentifier,
+    });
 
-        const { message, whatsapp, companyId } = bodySchema.parse(request.body)
+    return ResponseService.send({
+      reply,
+      message: "Mensagem salva com sucesso",
+    });
+  }
 
-        let chat = await prisma.chat.findFirst({
-            where: {
-                companyId,
-                whatsapp,
-                isOpen: true
-            },
-            select: { id: true }
-        })
+  async chat(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const companyId = request.headers
+      .companyId as string;
 
-        if (!chat) {
-            chat = await prisma.chat.create({
-                data: {
-                    companyId,
-                    whatsapp
-                }
-            })
-        }
+    const bodySchema = z.object({
+      tempUserId: z.string().uuid().optional(),
+      whatsapp: z.string().optional(),
+    });
 
-        await MessageService.saveMessage(message, "user", companyId, chat.id)
+    const paramsSchema = z.object({
+      chatId: z.string().uuid(),
+    });
 
-        return chat.id
+    const { chatId } = paramsSchema.parse(
+      request.params
+    );
+    const { tempUserId, whatsapp } =
+      bodySchema.parse(request.body);
+
+    if (!whatsapp && !tempUserId)
+      throw new Error();
+
+    const {
+      userFieldIdentifier,
+      userIdentifier,
+    } = extractUserIdentifierProps(
+      whatsapp,
+      tempUserId
+    );
+
+    const company =
+      await prisma.company.findUnique({
+        select: {
+          id: true,
+          companyName: true,
+          iaInstructions: true,
+          blocked: true,
+        },
+        where: { id: companyId },
+      });
+
+    if (!company) {
+      throw new CompanyNotFoundException();
+    } else if (company.blocked) {
+      throw new CompanyBlockedException();
     }
 
-    async chat(request: FastifyRequest, reply: FastifyReply) {
-        const bodySchema = z.object({
-            whatsapp: z.string(),
-        })
-        const paramsSchema = z.object({
-            chatId: z.string().uuid(),
-        })
+    const chat = new ChatService(
+      chatId,
+      company,
+      userFieldIdentifier,
+      userIdentifier
+    );
+    const response = await chat.answer();
 
-        const { chatId } = paramsSchema.parse(request.params)
-        const { whatsapp } = bodySchema.parse(request.body)
+    const { answer } = response;
 
-        const companyId = request.headers.companyId as string
+    // await MessageService.sendMessage(
+    //   answer,
+    //   whatsapp
+    // );
+    await MessageService.saveMessage({
+      message: answer,
+      role: "model",
+      companyId,
+      chatId,
+      userFieldIdentifier,
+      userIdentifier,
+    });
 
-        const company = await prisma.company.findUnique({ select: { id: true, companyName: true, iaInstructions: true, blocked: true }, where: { id: companyId } })
+    return answer;
+  }
 
-        if (!company) {
-            throw new CompanyNotFoundException()
-        } else if (company.blocked) {
-            throw new CompanyBlockedException()
-        }
+  // Request only user by the web client
+  async getLastMessages(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const tempUserId =
+      TokenService.getIdFromToken({ request });
 
-        const chat = new ChatService(chatId, company, whatsapp)
-        const response = await chat.answer()
+    const paramsSchema = z.object({
+      companyId: z.string().uuid(),
+    });
 
-        const { answer } = response
+    const { companyId } = paramsSchema.parse(
+      request.params
+    );
 
-        await MessageService.sendMessage(answer, whatsapp)
-        await MessageService.saveMessage(answer, "model", companyId, chatId)
+    const messages =
+      await prisma.message.findMany({
+        where: {
+          companyId,
+          tempUserId,
+        },
+        select: { id: true, content: true },
+      });
 
-        return answer
-
-    }
+    ResponseService.send({
+      reply,
+      data: { messages },
+    });
+  }
 }
 
-export default new ChatController()
+export default new ChatController();

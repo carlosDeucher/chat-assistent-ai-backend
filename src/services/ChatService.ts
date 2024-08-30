@@ -1,104 +1,157 @@
-import { Content } from "@google/generative-ai"
-import AIService from "./AIService.js"
-import prisma from "../lib/prisma.js"
-import { ChatNotFoundException } from "../exceptions/chat/ChatNotFoundException.js"
-import dayjs from "dayjs"
+import { Content } from "@google/generative-ai";
+import AIService from "./AIService.js";
+import prisma from "../lib/prisma.js";
+import { ChatNotFoundException } from "../exceptions/chat/ChatNotFoundException.js";
+import dayjs from "dayjs";
+import IFieldUserIdentifier from "../@types/IFieldUserIdentifier.js";
 
 type Company = {
-    companyName: string
-    id: string
-    iaInstructions: string
-}
+  companyName: string;
+  id: string;
+  iaInstructions: string;
+};
 
 interface ChatService {
-    chatId: string
-    company: Company
-    context?: object
+  chatId: string;
+  company: Company;
+  context?: object;
+  userFieldIdentifier: IFieldUserIdentifier;
+  userIdentifier: string;
 }
 
 type AnswerReturn = {
-    answer: string
-    whatsapp: string
-}
+  answer: string;
+};
 
 class ChatService {
-    constructor(chatId: ChatService["chatId"], company: ChatService["company"], whatsapp: string) {
-        this.chatId = chatId
-        this.company = company
-        this.context = undefined
+  constructor(
+    chatId: ChatService["chatId"],
+    company: ChatService["company"],
+    userFieldIdentifier: IFieldUserIdentifier,
+    userIdentifier: string
+  ) {
+    this.chatId = chatId;
+    this.company = company;
+    this.userFieldIdentifier = userFieldIdentifier;
+    this.userIdentifier = userIdentifier;
+    this.context = undefined;
+  }
+
+  async answer(): Promise<AnswerReturn> {
+    const { messages: chatMessages, whatsapp } =
+      await this.getChatMessages();
+
+    if (chatMessages.length === 0) {
+      throw new ChatNotFoundException();
     }
 
-    async answer(): Promise<AnswerReturn> {
-        const { messages: chatMessages, whatsapp } = await this.getChatMessages()
+    const context =
+      await this.getOldChatsMessages();
 
-        if (chatMessages.length === 0) {
-            throw new ChatNotFoundException()
-        }
+    const aiService = new AIService(
+      this.company.iaInstructions
+    );
 
-        const context = await this.getOldChatsMessages(whatsapp)
+    const answer = await aiService.answerChat(
+      chatMessages,
+      context
+    );
+    await this.closeChat();
 
-        const aiService = new AIService(this.company.iaInstructions)
+    return { answer };
+  }
 
-        const answer = await aiService.answerChat(chatMessages, context)
-        await this.closeChat()
-
-        return { answer, whatsapp }
-    }
-
-
-    private async getChatMessages() {
-        const chatMessages = await prisma.chat.findFirst({ where: { id: this.chatId }, include: { messages: { where: { chatId: this.chatId }, select: { id: true, content: true, createdAt: true }, orderBy: { createdAt: "asc" } } } })
-
-        if (!chatMessages?.messages) throw new Error("Chat not found")
-
-        return { messages: chatMessages.messages, whatsapp: chatMessages.whatsapp }
-    }
-
-    private async getOldChatsMessages(whatsapp: string): Promise<Content[]> {
-        const oneDayAgo = dayjs().subtract(1, "day").toDate()
-
-        const oldChats = await prisma.chat.findMany({
-            where: { createdAt: { gt: oneDayAgo }, companyId: this.company.id, whatsapp, id: { not: this.chatId } }, include: {
-                messages: {
-                    select: { id: true, content: true, role: true },
-                    orderBy: { createdAt: "asc" }
-                }
+  private async getChatMessages() {
+    const chatMessages =
+      await prisma.chat.findFirst({
+        where: { id: this.chatId },
+        include: {
+          messages: {
+            where: { chatId: this.chatId },
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
             },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      });
 
-        })
+    if (!chatMessages?.messages)
+      throw new Error("Chat not found");
 
-        const formattedContext: Content[] = []
+    return {
+      messages: chatMessages.messages,
+      whatsapp: chatMessages.whatsapp,
+    };
+  }
 
-        for (const chat of oldChats) {
+  private async getOldChatsMessages(): Promise<
+    Content[]
+  > {
+    const oneDayAgo = dayjs()
+      .subtract(1, "day")
+      .toDate();
 
-            const chatMessages = chat.messages
+    const oldChats = await prisma.chat.findMany({
+      where: {
+        createdAt: { gt: oneDayAgo },
+        companyId: this.company.id,
+        [this.userFieldIdentifier]: this.userIdentifier,
+        id: { not: this.chatId },
+      },
+      include: {
+        messages: {
+          select: {
+            id: true,
+            content: true,
+            role: true,
+          },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
 
-            for (const { role, content } of chatMessages) {
-                const lastIndex = formattedContext.length - 1
+    const formattedContext: Content[] = [];
 
-                const lastItem = formattedContext[lastIndex]
+    for (const chat of oldChats) {
+      const chatMessages = chat.messages;
 
-                if (lastItem?.role == role) {
-                    lastItem.parts = [...lastItem.parts, { text: content }]
-                } else {
-                    formattedContext.push({
-                        role,
-                        parts: [{ text: content }],
-                    })
-                }
-            }
+      for (const {
+        role,
+        content,
+      } of chatMessages) {
+        const lastIndex =
+          formattedContext.length - 1;
 
+        const lastItem =
+          formattedContext[lastIndex];
+
+        if (lastItem?.role == role) {
+          lastItem.parts = [
+            ...lastItem.parts,
+            { text: content },
+          ];
+        } else {
+          formattedContext.push({
+            role,
+            parts: [{ text: content }],
+          });
         }
-        return formattedContext
+      }
     }
+    return formattedContext;
+  }
 
-    private async closeChat(): Promise<void> {
-        await prisma.chat.update({
-            where: { id: this.chatId }, data: {
-                isOpen: false
-            }
-        })
-    }
+  private async closeChat(): Promise<void> {
+    await prisma.chat.update({
+      where: { id: this.chatId },
+      data: {
+        isOpen: false,
+      },
+    });
+  }
 }
 
-export default ChatService
+export default ChatService;
