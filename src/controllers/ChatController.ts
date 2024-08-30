@@ -13,6 +13,7 @@ import TokenService from "../services/TokenService.js";
 import ResponseService from "../services/ResponseService.js";
 import IFieldUserIdentifier from "../@types/IFieldUserIdentifier.js";
 import extractUserIdentifierProps from "../utils/extractUserIdentifierProps.js";
+import dayjs from "dayjs";
 
 class ChatController {
   async answer(
@@ -86,15 +87,13 @@ class ChatController {
     request: FastifyRequest,
     reply: FastifyReply
   ) {
-
     const paramsSchema = z.object({
       chatId: z.string().uuid(),
       companyId: z.string().uuid(),
     });
 
-    const { chatId, companyId } = paramsSchema.parse(
-      request.params
-    );
+    const { chatId, companyId } =
+      paramsSchema.parse(request.params);
 
     const userFieldIdentifier = request.headers
       .userFieldIdentifier as IFieldUserIdentifier;
@@ -151,9 +150,28 @@ class ChatController {
     const tempUserId =
       TokenService.getIdFromToken({ request });
 
+    const searchParamsSchema = z.object({
+      startDate: z.string().optional(),
+    });
+
     const paramsSchema = z.object({
       companyId: z.string().uuid(),
     });
+
+    const { startDate: startDateEncoded } =
+      searchParamsSchema.parse(request.query);
+
+    let startDate = dayjs(0).toDate();
+
+
+    if (startDateEncoded) {
+      const decodedISOString = decodeURIComponent(
+        startDateEncoded
+      );
+      startDate = dayjs(
+        decodedISOString
+      ).toDate();
+    }
 
     const { companyId } = paramsSchema.parse(
       request.params
@@ -164,8 +182,16 @@ class ChatController {
         where: {
           companyId,
           tempUserId,
+          createdAt: {
+            gt: startDate,
+          },
         },
-        select: { id: true, content: true, role: true, createdAt: true },
+        select: {
+          id: true,
+          content: true,
+          role: true,
+          createdAt: true,
+        },
       });
 
     ResponseService.send({
