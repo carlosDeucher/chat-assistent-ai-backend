@@ -12,6 +12,9 @@ interface saveMessageParam {
 }
 
 class MessageService {
+  /* 
+  Save the message in the database
+  */
   static async saveMessage({
     message,
     role,

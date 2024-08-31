@@ -12,10 +12,12 @@ import AIService from "../services/AIService.js";
 import TokenService from "../services/TokenService.js";
 import ResponseService from "../services/ResponseService.js";
 import IFieldUserIdentifier from "../@types/IFieldUserIdentifier.js";
-import extractUserIdentifierProps from "../utils/extractUserIdentifierProps.js";
 import dayjs from "dayjs";
 
 class ChatController {
+  /* 
+  Deprecated (Used for respond a single question, that is not a chat)
+  */
   async answer(
     request: FastifyRequest,
     reply: FastifyReply
@@ -33,6 +35,9 @@ class ChatController {
     });
   }
 
+  /*
+  Save the message sent by the user from WEB or WhatsApp webhooks (not implemented yet)
+  */
   async saveMessage(
     request: FastifyRequest,
     reply: FastifyReply
@@ -57,6 +62,9 @@ class ChatController {
     const userIdentifier = request.headers
       .userIdentifier as string;
 
+    /* 
+    Checks for an open company chat with the current user
+    */
     let chat = await prisma.chat.findFirst({
       where: {
         companyId,
@@ -66,6 +74,9 @@ class ChatController {
       select: { id: true },
     });
 
+    /* 
+    IF any chats are open, creates a new one
+    */
     if (!chat) {
       chat = await prisma.chat.create({
         data: {
@@ -90,6 +101,10 @@ class ChatController {
     });
   }
 
+  /* 
+  Answer the chat specified based on the chat
+  messages and other messages sent until 24 hours ago
+  */
   async chat(
     request: FastifyRequest,
     reply: FastifyReply
@@ -149,7 +164,10 @@ class ChatController {
     });
   }
 
-  // Request only user by the web client
+  /* 
+   Get messages with the creation date greater than the startDate specified
+   Request only used by the web client
+  */
   async getLastMessages(
     request: FastifyRequest,
     reply: FastifyReply

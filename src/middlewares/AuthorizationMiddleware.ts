@@ -5,7 +5,7 @@ import prisma from '../lib/prisma.js'
 import { EnvVarNotFoundException } from '../exceptions/config/EnvVarNotFoundExceptions.js'
 
 /**
- * Middleware que verifica se o usuário está autenticado através do token JWT enviado no Bearer Authorization
+ * Validate JWT authorization token
  */
 async function AuthorizationMiddleware(request: FastifyRequest) {
     const authHeader = request.headers.authorization

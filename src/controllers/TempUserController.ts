@@ -8,8 +8,6 @@ class TempUserController {
     const tempUserId = randomUUID()
     const accessToken = TokenService.generateAccessToken(tempUserId)
 
-    // TODO - IP checking
-
     return ResponseService.send({ reply, data: { accessToken, } })
   }
 }

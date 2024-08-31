@@ -3,6 +3,10 @@ import TokenService from "../services/TokenService.js";
 import extractUserIdentifierProps from "../utils/extractUserIdentifierProps.js";
 import { MissingUserIdentifierException } from "../exceptions/auth/MissingUserIdentifierException.js";
 
+/*  
+Handle the user identifier (whatsapp or tempUserId)
+Returning an error if any of them are included
+ */
 async function AuthenticationMiddleware(
   request: FastifyRequest
 ) {

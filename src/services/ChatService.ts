@@ -32,13 +32,18 @@ class ChatService {
   ) {
     this.chatId = chatId;
     this.company = company;
-    this.userFieldIdentifier = userFieldIdentifier;
+    this.userFieldIdentifier =
+      userFieldIdentifier;
     this.userIdentifier = userIdentifier;
     this.context = undefined;
   }
 
+  /* 
+  Answer the chat returning the response and closing the chat
+  changing the "isOpen" flag to false
+  */
   async answer(): Promise<AnswerReturn> {
-    const { messages: chatMessages, whatsapp } =
+    const { messages: chatMessages } =
       await this.getChatMessages();
 
     if (chatMessages.length === 0) {
@@ -61,6 +66,9 @@ class ChatService {
     return { answer };
   }
 
+  /* 
+  Get the chat messages (If chat is not found return an error)
+  */
   private async getChatMessages() {
     const chatMessages =
       await prisma.chat.findFirst({
@@ -87,6 +95,9 @@ class ChatService {
     };
   }
 
+  /* 
+  Get the chat messages on a range of 24 hours after its creation date
+  */
   private async getOldChatsMessages(): Promise<
     Content[]
   > {
@@ -98,7 +109,8 @@ class ChatService {
       where: {
         createdAt: { gt: oneDayAgo },
         companyId: this.company.id,
-        [this.userFieldIdentifier]: this.userIdentifier,
+        [this.userFieldIdentifier]:
+          this.userIdentifier,
         id: { not: this.chatId },
       },
       include: {
@@ -144,6 +156,9 @@ class ChatService {
     return formattedContext;
   }
 
+  /* 
+  Change the chat flag "isOpen" to false
+  */
   private async closeChat(): Promise<void> {
     await prisma.chat.update({
       where: { id: this.chatId },
