@@ -5,7 +5,6 @@ import companyRoutes from './routes/CompanyRoutes.js'
 import tempUserRoutes from './routes/TempUserRoutes.js'
 import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
-import websocket from '@fastify/websocket'
 import { PluginRegisterException } from './exceptions/config/PluginRegisterException.js'
 
 async function routes(fastify: FastifyInstance) {
@@ -41,16 +40,6 @@ async function routes(fastify: FastifyInstance) {
   */
   try {
     await fastify.register(formbody)
-  } catch (error: any) {
-    console.error(error.message)
-    throw new PluginRegisterException('@fastify/formbody')
-  }
-
-  /**
-  * WebSocket
-  */
-  try {
-    await fastify.register(websocket)
   } catch (error: any) {
     console.error(error.message)
     throw new PluginRegisterException('@fastify/formbody')
