@@ -1,8 +1,6 @@
 import { FastifyInstance } from "fastify";
 import CompanyController from "../controllers/CompanyController.js";
 
-
-
 /**
  * Encapsulates the routes
  * @param {FastifyInstance} fastify  Encapsulated Fastify Instance

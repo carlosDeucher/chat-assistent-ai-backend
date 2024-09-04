@@ -42,7 +42,7 @@ class CompanyController {
     }
 
 
-    // Caso não exista uma empresa com o e-mail informado, retorna o erro
+    // If the company was not found return an error
     if (!company) throw new InvalidCredentialsException()
 
     const passwordMatch = bcryptjs.compareSync(password, company.password)
@@ -92,7 +92,7 @@ class CompanyController {
     const { companyName, password, iaInstructions, email } = request.body as CreateBody
 
     /**
-    * 1 - Procura se a empresa já existe com base no e-mail
+    * Search for an existent company with the same email
     */
     const company = await prisma.company.findUnique({
       where: {
@@ -100,7 +100,6 @@ class CompanyController {
       },
     })
 
-    // Caso o email esteja em uso retorna erro
     if (company) {
       throw new EmailInUseException()
     }

@@ -1,7 +1,5 @@
 import Fastify from 'fastify'
 
-
-
 function bootstrap() {
   const app = Fastify({
     logger: false

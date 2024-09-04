@@ -3,8 +3,6 @@ import {
   Content,
   GenerativeModel,
   GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
 } from "@google/generative-ai";
 
 const generationConfig = {
@@ -14,34 +12,6 @@ const generationConfig = {
   topP: 0.95,
   topK: 64,
 };
-
-const safetySettings = [
-  {
-    category:
-      HarmCategory.HARM_CATEGORY_UNSPECIFIED,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category:
-      HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category:
-      HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category:
-      HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category:
-      HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
 
 type MessageParam = {
   id: string;
@@ -62,7 +32,6 @@ class AIService {
       model: "gemini-1.5-flash",
       systemInstruction,
       generationConfig,
-      //  safetySettings
     });
   }
 
@@ -81,8 +50,6 @@ class AIService {
     const chat = this.model.startChat({
       history: context,
     });
-
-    console.log("messages", messages);
 
     const question = messages
       .map((message) => message.content + ".\n")
