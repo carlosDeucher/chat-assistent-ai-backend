@@ -15,11 +15,6 @@ async function AuthorizationMiddleware(request: FastifyRequest) {
 
     const token = authHeader.split(' ')[1]
 
-    const accessTokenSecret = process.env.JWT_ACCESS_TOKEN_SECRET
-
-    if (!accessTokenSecret)
-        throw new EnvVarNotFoundException('JWT_ACCESS_TOKEN_SECRET')
-
     try {
         const payload = TokenService.verify({
             token,
