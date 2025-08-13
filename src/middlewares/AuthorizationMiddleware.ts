@@ -2,7 +2,6 @@ import type { FastifyRequest } from 'fastify'
 import TokenService from '../services/TokenService.js'
 import { InvalidCredentialsException } from '../exceptions/auth/InvalidCredentialsException.js'
 import prisma from '../lib/prisma.js'
-import { EnvVarNotFoundException } from '../exceptions/config/EnvVarNotFoundExceptions.js'
 
 /**
  * Validate JWT authorization token
