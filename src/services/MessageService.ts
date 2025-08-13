@@ -33,11 +33,6 @@ class MessageService {
       },
     });
   }
-
-  static async sendMessage(
-    message: string,
-    whatsapp: string
-  ) {}
 }
 
 export default MessageService;
