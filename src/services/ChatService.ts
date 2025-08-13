@@ -11,56 +11,34 @@ type Company = {
   iaInstructions: string;
 };
 
-interface ChatService {
-  chatId: string;
-  company: Company;
-  context?: object;
-  userFieldIdentifier: IFieldUserIdentifier;
-  userIdentifier: string;
-}
-
 type AnswerReturn = {
   answer: string;
 };
 
 class ChatService {
   constructor(
-    chatId: ChatService["chatId"],
-    company: ChatService["company"],
-    userFieldIdentifier: IFieldUserIdentifier,
-    userIdentifier: string
-  ) {
-    this.chatId = chatId;
-    this.company = company;
-    this.userFieldIdentifier =
-      userFieldIdentifier;
-    this.userIdentifier = userIdentifier;
-    this.context = undefined;
-  }
+    private readonly chatId: string,
+    private readonly company: Company,
+    private readonly userFieldIdentifier: IFieldUserIdentifier,
+    private readonly userIdentifier: string
+  ) {}
 
   /* 
   Answer the chat returning the response and closing the chat
   changing the "isOpen" flag to false
   */
   async answer(): Promise<AnswerReturn> {
-    const { messages: chatMessages } =
-      await this.getChatMessages();
+    const { messages: chatMessages } = await this.getChatMessages();
 
     if (chatMessages.length === 0) {
       throw new ChatNotFoundException();
     }
 
-    const context =
-      await this.getOldChatsMessages();
+    const context = await this.getOldChatsMessages();
 
-    const aiService = new AIService(
-      this.company.iaInstructions
-    );
+    const aiService = new AIService(this.company.iaInstructions);
 
-    const answer = await aiService.answerChat(
-      chatMessages,
-      context
-    );
+    const answer = await aiService.answerChat(chatMessages, context);
     await this.closeChat();
 
     return { answer };
@@ -70,24 +48,22 @@ class ChatService {
   Get the chat messages (If chat is not found return an error)
   */
   private async getChatMessages() {
-    const chatMessages =
-      await prisma.chat.findFirst({
-        where: { id: this.chatId },
-        include: {
-          messages: {
-            where: { chatId: this.chatId },
-            select: {
-              id: true,
-              content: true,
-              createdAt: true,
-            },
-            orderBy: { createdAt: "asc" },
+    const chatMessages = await prisma.chat.findFirst({
+      where: { id: this.chatId },
+      include: {
+        messages: {
+          where: { chatId: this.chatId },
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
           },
+          orderBy: { createdAt: "asc" },
         },
-      });
+      },
+    });
 
-    if (!chatMessages?.messages)
-      throw new Error("Chat not found");
+    if (!chatMessages?.messages) throw new Error("Chat not found");
 
     return {
       messages: chatMessages.messages,
@@ -98,19 +74,14 @@ class ChatService {
   /* 
   Get the chat messages on a range of 24 hours after its creation date
   */
-  private async getOldChatsMessages(): Promise<
-    Content[]
-  > {
-    const oneDayAgo = dayjs()
-      .subtract(1, "day")
-      .toDate();
+  private async getOldChatsMessages(): Promise<Content[]> {
+    const oneDayAgo = dayjs().subtract(1, "day").toDate();
 
     const oldChats = await prisma.chat.findMany({
       where: {
         createdAt: { gt: oneDayAgo },
         companyId: this.company.id,
-        [this.userFieldIdentifier]:
-          this.userIdentifier,
+        [this.userFieldIdentifier]: this.userIdentifier,
         id: { not: this.chatId },
       },
       include: {
@@ -130,21 +101,13 @@ class ChatService {
     for (const chat of oldChats) {
       const chatMessages = chat.messages;
 
-      for (const {
-        role,
-        content,
-      } of chatMessages) {
-        const lastIndex =
-          formattedContext.length - 1;
+      for (const { role, content } of chatMessages) {
+        const lastIndex = formattedContext.length - 1;
 
-        const lastItem =
-          formattedContext[lastIndex];
+        const lastItem = formattedContext[lastIndex];
 
         if (lastItem?.role == role) {
-          lastItem.parts = [
-            ...lastItem.parts,
-            { text: content },
-          ];
+          lastItem.parts = [...lastItem.parts, { text: content }];
         } else {
           formattedContext.push({
             role,
